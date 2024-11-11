@@ -18,6 +18,7 @@ logger.info(f"Using AWS_REGION: {aws_region}")
 cloudwatch = boto3.client("cloudwatch", region_name=aws_region)
 dynamodb = boto3.resource("dynamodb", region_name=aws_region)
 
+
 # Recursive function to convert floats to Decimal
 def convert_to_decimal(data):
     if isinstance(data, list):
@@ -165,4 +166,4 @@ def handler(event, context):
         logger.error("Failed to publish CloudWatch metrics: %s", e)
 
     return {"statusCode": 200, "body": json.dumps({"message": "Process completed"})}
-  
+

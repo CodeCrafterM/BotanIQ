@@ -29,6 +29,7 @@ pre-commit = "^4.0.1"
 [tool.poetry.scripts]
 lint = "scripts.lint:main"
 format = "scripts.format:main"
+e2e-test = "tests.e2e:main"
 
 
 [build-system]
