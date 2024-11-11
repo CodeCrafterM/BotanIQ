@@ -1,0 +1,217 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: poetry install
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Run Formatting
+        run: poetry run format
+
+      - name: Run Linting
+        run: poetry run lint
+
+  pytest:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Run Tests
+        env:
+            AWS_ACCESS_KEY_ID: "fake"
+            AWS_SECRET_ACCESS_KEY: "fake"
+            AWS_DEFAULT_REGION: "us-east-1"
+        run: poetry run pytest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: pytest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install or Update AWS CLI
+        run: |
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            sudo apt-get install -y unzip
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+          else
+            echo "AWS CLI already installed, updating..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -o awscliv2.zip
+            cd aws
+            sudo ./install --update
+            cd ..
+          fi
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+  
+      - name: Install Poetry
+        run: |
+          pip install poetry
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+  
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Deploy CDK Stack
+        run: cdk deploy --all --require-approval never
+
+      - name: Wait for Email Subscription Approval
+        run: sleep 5
+
+  e2e-test:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+        
+      - name: Run E2E Tests
+        run: poetry run e2e-test
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: e2e-test
+    if: failure()
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        run: |
+          pip install poetry
+          echo "export PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: poetry install
+
+      - name: Install or Update AWS CLI
+        run: |
+          if ! command -v aws &> /dev/null; then
+            echo "Installing AWS CLI..."
+            sudo apt-get install -y unzip
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+          else
+            echo "AWS CLI already installed, updating..."
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip -o awscliv2.zip
+            cd aws
+            sudo ./install --update
+            cd ..
+          fi
+
+      - name: Install CDK
+        run: npm install -g aws-cdk
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Destroy CDK Stack
+        run: cdk destroy --all --force
+        continue-on-error: true
