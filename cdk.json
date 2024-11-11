@@ -1,0 +1,7 @@
+{
+    "app": "poetry run python cdk/app.py",
+    "context": {
+        "@aws-cdk/core:default-account": "329599627779",
+        "@aws-cdk/core:default-region": "us-east-1"
+    }
+}
