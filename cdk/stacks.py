@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as _lambda
 from aws_cdk import aws_s3 as s3
@@ -21,7 +22,7 @@ class PlantDetectionStack(Stack):
             config = json.load(config_file)
         email_subscribers = config.get("email_subscribers", [])
 
-        # Create SNS topic for notifications
+        # SNS topic for notifications
         sns_topic = sns.Topic(self, "PlantDetectionTopic")
 
         # Subscribe email addresses to the SNS topic
@@ -50,13 +51,11 @@ class PlantDetectionStack(Stack):
         detection_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["rekognition:DetectLabels"],
-                resources=[
-                    "*"
-                ],
+                resources=["*"],
             )
         )
 
-        # Add S3 trigger to Lambda
+        # S3 trigger to Lambda
         detection_lambda.add_event_source(
             S3EventSource(bucket, events=[s3.EventType.OBJECT_CREATED])
         )
@@ -64,3 +63,27 @@ class PlantDetectionStack(Stack):
         # Grant Lambda permissions to read from S3 and publish to SNS
         bucket.grant_read(detection_lambda)
         sns_topic.grant_publish(detection_lambda)
+
+        # Attach policy to allow CloudWatch PutMetricData
+        detection_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["cloudwatch:PutMetricData"],
+                resources=["*"],  # You can scope this down further if needed
+            )
+        )
+
+        # DynamoDB table for frame metadata
+        table = dynamodb.Table(
+            self,
+            "FrameMetadataTable",
+            partition_key=dynamodb.Attribute(
+                name="frame_id", type=dynamodb.AttributeType.STRING
+            ),
+            removal_policy=RemovalPolicy.DESTROY,  # Ensures the table is deleted during `cdk destroy`
+        )
+
+        #  Permissions to Lambda to write to the table
+        table.grant_write_data(detection_lambda)
+
+        # Pass table name to Lambda as environment variable
+        detection_lambda.add_environment("DYNAMODB_TABLE_NAME", table.table_name)

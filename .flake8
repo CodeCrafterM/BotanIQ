@@ -1,3 +1,4 @@
-ignore = E266
+[flake8]
+ignore = E266, E501
 max-line-length = 105
-exclude = .git,__pycache__,venv
+exclude = .git,__pycache__,venv,cdk.out
