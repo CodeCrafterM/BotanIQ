@@ -51,9 +51,7 @@ class PlantDetectionStack(Stack):
         detection_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["rekognition:DetectLabels"],
-                resources=[
-                    "*"
-                ],
+                resources=["*"],
             )
         )
 
