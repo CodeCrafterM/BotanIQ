@@ -1,0 +1,75 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+.env/
+.venv/
+env/
+venv/
+*.env
+
+# Poetry specific
+poetry.lock
+
+# AWS CDK generated files
+cdk.out/
+*.cdk.staging/
+
+# AWS credentials and config (if using shared credentials)
+.aws/
+
+# Python-specific cache and log files
+*.log
+*.sqlite3
+*.coverage
+.coverage.*
+.cache/
+
+# VS Code / IDE-specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs and temp files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.pid
+
+# Node.js dependencies (if any)
+node_modules/
+
+# Specific project directories/files
+scripts/generate_test_data.pyc  # Ignore compiled script outputs
+lambda_functions/utils/__pycache__/
+lambda_functions/main_handler.pyc
+tests/__pycache__/
+docs/*.drawio~  # Temporary files for Draw.io
+config/*.json~  # Temporary JSON files
+
+# User/environment-specific files
+*.iml
+*.idea/
+*.history/
+*.DS_Store
+
+# Temp/debug artifacts
+*.temp
+*.swp
+*.swo
+*.tmp
+
+# Additional exclusions (optional)
+# Ignore any secrets or sensitive data files here (e.g., `secrets/` or `config/keys/` if applicable).

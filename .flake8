@@ -1,0 +1,3 @@
+ignore = E266
+max-line-length = 105
+exclude = .git,__pycache__,venv
