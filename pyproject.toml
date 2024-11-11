@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "botaniq"
+version = "0.1.0"
+description = "A smart plant detection pipeline using AWS"
+authors = ["Mustafa Saadu <saadim@pm.me>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+boto3 = "^1.35.57"
+aws-cdk-lib = "^2.166.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+moto = "^5.0.20"
+black = "^24.10.0"
+flake8 = "^7.1.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
