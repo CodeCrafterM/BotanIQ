@@ -19,6 +19,8 @@ dynamodb = boto3.resource("dynamodb", region_name=aws_region)
 
 def handler(event, context):
     logger.info("Event received: %s", json.dumps(event))
+    frames_processed = 0
+    total_plants_detected = 0
 
     for record in event.get("Records", []):
         bucket = record["s3"]["bucket"]["name"]
@@ -35,10 +37,18 @@ def handler(event, context):
         plant_detector = PlantDetector(bucket, key)
         notifier = NotificationService()
 
-        if plant_detector.detect():
-            logger.info("Plant detected in image %s", key)
-            notifier.send_notification(key, 1)
+        frames_processed += 1  # Increment frames processed for each record
+
+        # Detect multiple plants in the image
+        detection_result = plant_detector.detect_multiple()
+        plant_labels = detection_result["labels"]
+        plants_detected = detection_result["total_instances"]  # Total count of plant instances
+        total_plants_detected += plants_detected
+
+        if plants_detected > 0:
+            logger.info("Plants detected in image %s: %s", key, plant_labels)
+            notifier.send_notification(key, plants_detected)
         else:
-            logger.info("No plant detected in image: %s", key)
+            logger.info("No plants detected in image: %s", key)
 
     return {"statusCode": 200, "body": json.dumps({"message": "Process completed"})}
