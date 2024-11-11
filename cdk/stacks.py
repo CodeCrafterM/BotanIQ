@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from aws_cdk import RemovalPolicy, Stack
+from aws_cdk import CfnOutput, RemovalPolicy, Stack
 from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda as _lambda
@@ -51,9 +51,7 @@ class PlantDetectionStack(Stack):
         detection_lambda.add_to_role_policy(
             iam.PolicyStatement(
                 actions=["rekognition:DetectLabels"],
-                resources=[
-                    "*"
-                ],
+                resources=["*"],
             )
         )
 
@@ -89,3 +87,25 @@ class PlantDetectionStack(Stack):
 
         # Pass table name to Lambda as environment variable
         detection_lambda.add_environment("DYNAMODB_TABLE_NAME", table.table_name)
+
+        # Export resource details as outputs
+        CfnOutput(
+            self,
+            "S3BucketName",
+            value=bucket.bucket_name,
+            description="Name of the S3 bucket for camera frames",
+        )
+
+        CfnOutput(
+            self,
+            "DynamoDBTableName",
+            value=table.table_name,
+            description="Name of the DynamoDB table for frame metadata",
+        )
+
+        CfnOutput(
+            self,
+            "SNSTopicArn",
+            value=sns_topic.topic_arn,
+            description="ARN of the SNS topic for plant detection notifications",
+        )

@@ -18,6 +18,7 @@ logger.info(f"Using AWS_REGION: {aws_region}")
 cloudwatch = boto3.client("cloudwatch", region_name=aws_region)
 dynamodb = boto3.resource("dynamodb", region_name=aws_region)
 
+
 # Recursive function to convert floats to Decimal
 def convert_to_decimal(data):
     if isinstance(data, list):
@@ -86,7 +87,9 @@ def handler(event, context):
         # Detect multiple plants in the image
         detection_result = plant_detector.detect_multiple()
         plant_labels = detection_result["labels"]
-        plants_detected = detection_result["total_instances"]  # Total count of plant instances
+        plants_detected = detection_result[
+            "total_instances"
+        ]  # Total count of plant instances
         total_plants_detected += plants_detected
 
         if plants_detected > 0:
